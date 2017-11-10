@@ -31,6 +31,7 @@
 #include <util/atomic.h>
 #include <EEPROM.h>
 #include "iface_nrf24l01.h"
+#include <string.h>
 
 
 // ############ Wiring ################
@@ -125,6 +126,7 @@ struct {
     uint32_t lastUpdate;
 } telemetry_data;
 
+uint16_t overrun_cnt = 0;
 uint8_t transmitterID[4];
 uint8_t current_protocol;
 static volatile bool ppm_ok = false;
@@ -133,6 +135,14 @@ static bool reset=true;
 volatile uint16_t Servo_data[12];
 static uint16_t ppm[12] = {PPM_MIN,PPM_MIN,PPM_MIN,PPM_MIN,PPM_MID,PPM_MID,
                            PPM_MID,PPM_MID,PPM_MID,PPM_MID,PPM_MID,PPM_MID,};
+
+
+String inputString = "";
+boolean stringComplete = false;
+char *p, *i;
+char *c = new char[200 + 1];
+char *errpt;
+uint8_t ppm_cnt;
 
 void setup()
 {
@@ -148,26 +158,36 @@ void setup()
     frskyInit();
     
     // PPM ISR setup
-    attachInterrupt(digitalPinToInterrupt(PPM_pin), ISR_ppm, CHANGE);
+//    attachInterrupt(digitalPinToInterrupt(PPM_pin), ISR_ppm, CHANGE);
     TCCR1A = 0;  //reset timer1
     TCCR1B = 0;
     TCCR1B |= (1 << CS11);  //set timer1 to increment every 1 us @ 8MHz, 0.5 us @16MHz
 
     set_txid(false);
+    //Serial port i/o setup
+    Serial.begin(115200);
+    inputString.reserve(200);
 }
 
 void loop()
 {
-    uint32_t timeout=0;
+    uint32_t timeout;
     // reset / rebind
+//    Serial.println("Begin loop");
     if(reset || ppm[AUX8] > PPM_MAX_COMMAND) {
         reset = false;
+        Serial.println("Selecting protocol");
         selectProtocol();
+        Serial.println("Selected protocol");
         NRF24L01_Reset();
+        Serial.println("nrf24l01 reset");
         NRF24L01_Initialize();
+        Serial.println("nrf24l01 init");
         init_protocol();
+        Serial.println("Init protocol done");
     }
-    telemetry_data.updated = 0;
+//    telemetry_data.updated = 0;
+//    Serial.println("Processing protocol");
     // process protocol
     switch(current_protocol) {
         case PROTO_CG023:
@@ -213,14 +233,78 @@ void loop()
             break;
     }
     // updates ppm values out of ISR
-    update_ppm();
-    
-    while(micros() < timeout) {
-        if(telemetry_data.updated) {
-            frskyUpdate();
-        }            
+//    update_ppm();
+    overrun_cnt = 0;
+
+ // Process string into tokens and assign values to ppm
+    // The Arduino will also echo the command values that it assigned
+    // to ppm
+    if (stringComplete) {
+        //Serial.println(inputString);
+        // process string
+        
+        strcpy(c, inputString.c_str());
+        p = strtok_r(c,",",&i); // returns substring up to first "," delimiter
+        ppm_cnt=0;
+        while (p !=0){
+          //Serial.print(p);
+          int val=strtol(p, &errpt, 10);
+          if (!*errpt) {
+            Serial.print(val);
+            ppm[ppm_cnt]=val;
+          }
+          else
+            Serial.print("x"); // prints "x" if it could not decipher the command. Other values in string may still be assigned.
+          Serial.print(";"); // a separator between ppm values
+          p = strtok_r(NULL,",",&i);
+          ppm_cnt+=1;
+        }
+        Serial.println("."); // prints "." at end of command
+        //ppm[0]=
+        
+        
+        
+        // clear the string:
+        inputString = "";
+        stringComplete = false;
     }
-    telemetry_data.updated = 0;
+    
+    // Read the string from the serial buffer
+    while (Serial.available()) {
+      // get the new byte:
+      char inChar = (char)Serial.read();
+      // if the incoming character is a newline, set a flag
+      // so the main loop can do something about it:
+      if (inChar == '\n') {
+        stringComplete = true;
+      }
+      else {      
+        // add it to the inputString:
+        inputString += inChar;
+      }
+      
+    }
+    // wait before sending next packet
+    while(micros() < timeout) // timeout for CX-10 blue = 6000microseconds. 
+    {
+      overrun_cnt+=1;
+    };
+    // Compare counter to debug for overruns
+    if ((overrun_cnt<1000)||(stringComplete)) {
+      Serial.println(overrun_cnt);
+    }
+    
+
+
+
+//  wait before sending next packet    
+    while(micros() < timeout) {
+//        if(telemetry_data.updated) {
+//            frskyUpdate();
+//        }            
+    }
+//    telemetry_data.updated = 0;
+    Serial.println(overrun_cnt);
 }
 
 void set_txid(bool renew)
@@ -240,6 +324,8 @@ void selectProtocol()
 {
     // wait for multiple complete ppm frames
     ppm_ok = false;
+    set_txid(true);
+/*
     uint8_t count = 10;
     while(count) {
         while(!ppm_ok) {} // wait
@@ -251,10 +337,11 @@ void selectProtocol()
     
     // startup stick commands (protocol selection / renew transmitter ID)
     
-    if(ppm[RUDDER] < PPM_MIN_COMMAND && ppm[AILERON] < PPM_MIN_COMMAND) // rudder left + aileron left
+    //if(ppm[RUDDER] < PPM_MIN_COMMAND && ppm[AILERON] < PPM_MIN_COMMAND) // rudder left + aileron left
         current_protocol = PROTO_BAYANG_SILVERWARE; // Bayang protocol for Silverware with frsky telemetry
         
-    else if(ppm[RUDDER] < PPM_MIN_COMMAND)   // Rudder left
+    //else if(ppm[RUDDER] < PPM_MIN_COMMAND)   // Rudder left
+    
         set_txid(true);                      // Renew Transmitter ID
     
     // Rudder right + Aileron right + Elevator down
@@ -299,8 +386,9 @@ void selectProtocol()
     
     // Elevator up + Aileron right
     else if(ppm[ELEVATOR] > PPM_MAX_COMMAND && ppm[AILERON] > PPM_MAX_COMMAND)
+        */
         current_protocol = PROTO_BAYANG;    // EAchine H8(C) mini, BayangToys X6/X7/X9, JJRC JJ850 ...
-    
+   /* 
     // Elevator up + Aileron left
     else if(ppm[ELEVATOR] > PPM_MAX_COMMAND && ppm[AILERON] < PPM_MIN_COMMAND) 
         current_protocol = PROTO_H7;        // EAchine H7, MT99xx
@@ -320,17 +408,21 @@ void selectProtocol()
     // Aileron left
     else if(ppm[AILERON] < PPM_MIN_COMMAND)  
         current_protocol = PROTO_CX10_GREEN;  // Cheerson CX10(green pcb)... 
-    
+    else if (true)
+        //Set protocol to Bayang
+        current_protocol = PROTO_BAYANG;
+
     // read last used protocol from eeprom
     else 
-        current_protocol = constrain(EEPROM.read(ee_PROTOCOL_ID),0,PROTO_END-1);      
+        current_protocol = constrain(EEPROM.read(ee_PROTOCOL_ID),0,PROTO_END-1);
+        */      
     // update eeprom 
     EEPROM.update(ee_PROTOCOL_ID, current_protocol);
     // wait for safe throttle
-    while(ppm[THROTTLE] > PPM_SAFE_THROTTLE) {
-        delay(100);
-        update_ppm();
-    }
+//    while(ppm[THROTTLE] > PPM_SAFE_THROTTLE) {
+//        delay(100);
+//        update_ppm();
+//    }
 }
 
 void init_protocol()
@@ -358,6 +450,7 @@ void init_protocol()
         case PROTO_BAYANG_SILVERWARE:
             Bayang_init();
             Bayang_bind();
+            Serial.println("H8 Init and bind on Bayang proto");
             break;
         case PROTO_SYMAX5C1:
         case PROTO_SYMAXOLD:
@@ -389,50 +482,50 @@ void init_protocol()
 }
 
 // update ppm values out of ISR    
-void update_ppm()
-{
-    for(uint8_t ch=0; ch<CHANNELS; ch++) {
-        ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-            ppm[ch] = Servo_data[ch];
-        }
-    }
-#ifdef SPEKTRUM
-    for(uint8_t ch=0; ch<CHANNELS; ch++) {
-        if(ch == AILERON || ch == RUDDER) {
-            ppm[ch] = 3000-ppm[ch];
-        }
-        ppm[ch] = constrain(map(ppm[ch],1120,1880,PPM_MIN,PPM_MAX),PPM_MIN,PPM_MAX);
-    }
-#endif
-}
+//void update_ppm()
+//{
+//    for(uint8_t ch=0; ch<CHANNELS; ch++) {
+//        ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
+//            ppm[ch] = Servo_data[ch];
+//        }
+//    }
+//#ifdef SPEKTRUM
+//    for(uint8_t ch=0; ch<CHANNELS; ch++) {
+//        if(ch == AILERON || ch == RUDDER) {
+//            ppm[ch] = 3000-ppm[ch];
+//        }
+//        ppm[ch] = constrain(map(ppm[ch],1120,1880,PPM_MIN,PPM_MAX),PPM_MIN,PPM_MAX);
+//    }
+//#endif
+//}
 
-void ISR_ppm()
-{
-    #if F_CPU == 16000000
-        #define PPM_SCALE 1L
-    #elif F_CPU == 8000000
-        #define PPM_SCALE 0L
-    #else
-        #error // 8 or 16MHz only !
-    #endif
-    static unsigned int pulse;
-    static unsigned long counterPPM;
-    static byte chan;
-    counterPPM = TCNT1;
-    TCNT1 = 0;
-    ppm_ok=false;
-    if(counterPPM < 510 << PPM_SCALE) {  //must be a pulse if less than 510us
-        pulse = counterPPM;
-    }
-    else if(counterPPM > 1910 << PPM_SCALE) {  //sync pulses over 1910us
-        chan = 0;
-    }
-    else{  //servo values between 510us and 2420us will end up here
-        if(chan < CHANNELS) {
-            Servo_data[chan]= constrain((counterPPM + pulse) >> PPM_SCALE, PPM_MIN, PPM_MAX);
-            if(chan==3)
-                ppm_ok = true; // 4 first channels Ok
-        }
-        chan++;
-    }
-}
+//void ISR_ppm()
+//{
+//    #if F_CPU == 16000000
+//        #define PPM_SCALE 1L
+//    #elif F_CPU == 8000000
+//        #define PPM_SCALE 0L
+//    #else
+//        #error // 8 or 16MHz only !
+//    #endif
+//    static unsigned int pulse;
+//    static unsigned long counterPPM;
+//    static byte chan;
+//    counterPPM = TCNT1;
+//    TCNT1 = 0;
+//    ppm_ok=false;
+//    if(counterPPM < 510 << PPM_SCALE) {  //must be a pulse if less than 510us
+//        pulse = counterPPM;
+//    }
+//    else if(counterPPM > 1910 << PPM_SCALE) {  //sync pulses over 1910us
+//        chan = 0;
+//    }
+//    else{  //servo values between 510us and 2420us will end up here
+//        if(chan < CHANNELS) {
+//            Servo_data[chan]= constrain((counterPPM + pulse) >> PPM_SCALE, PPM_MIN, PPM_MAX);
+//            if(chan==3)
+//                ppm_ok = true; // 4 first channels Ok
+//        }
+//        chan++;
+//    }
+//}
