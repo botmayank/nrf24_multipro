@@ -459,6 +459,7 @@ void init_protocol()
         case PROTO_H8_3D:
             H8_3D_init();
             H8_3D_bind();
+            Serial.println("H20 Init and bind on H8 proto");
             break;
         case PROTO_MJX:
         case PROTO_E010:
