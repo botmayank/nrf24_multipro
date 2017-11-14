@@ -8,3 +8,7 @@ https://github.com/perrytsao/nrf24_cx10_pc
 
 which in turn is based upon the awesome nrf24_multipro project by goebish:
 https://github.com/goebish/nrf24_multipro
+
+Basic setup using Arduino Uno and nRF24L01+ module to control JJRC H8 mini:
+![Setup](https://i.imgur.com/PkZDO9w.jpg)
+
