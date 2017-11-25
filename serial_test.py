@@ -8,14 +8,19 @@ using the nRF24L01 wireless boards.
 The arrow keys control elevator and aileron (forward/reverse and left/right)
 and the w,s keys control throttle, and the a,d, keys control the rudder (yaw)
 
-This uses the msvcrt library, so it only works under Windows. 
+# This uses the msvcrt library, so it only works under Windows. 
 
-Created on Sun Feb 21 00:17:38 2016
+This is modified to implement kbhit and getch functions of msvcrt for Linux using direct
+STDIO calls based on the recipe:
+http://code.activestate.com/recipes/572182-how-to-implement-kbhit-on-linux/
+
+Created on Sat Nov 25 18:54:32 2017
 
 @author: perrytsao
+@author: botmayank
 """
-import serial, time
-# import msvcrt
+import serial, time, sys
+from select import select
 
 throttle=1000
 aileron=1500
@@ -26,21 +31,29 @@ tg=10
 ag=50
 eg=50
 rg=50
-arduino = serial.Serial('/dev/ttyACM1', 115200, timeout=0.01)
- 
+
+port = '/dev/ttyACM0'
+
+arduino = serial.Serial(port, 115200, timeout=0.01)
+
+
+def getch():
+    return sys.stdin.read(1)
+
+def kbhit():
+    dr, dw, de = select([sys.stdin], [], [], 0)
+    return dr <> []
 try:
-    arduino=serial.Serial('/dev/ttyACM1', 115200, timeout=.01)
+    arduino=serial.Serial(port, 115200, timeout=.01)
     time.sleep(1) #give the connection a second to settle
     #arduino.write("1500, 1500, 1500, 1500\n")
-    while True:
-        
+    while True:        
         data = arduino.readline()
         if data:
             #String responses from Arduino Uno are prefaced with [AU]
-            print "[AU]: "+data 
-            
-        if msvcrt.kbhit():
-            key = ord(msvcrt.getch())
+            print "[AU]: "+data             
+        if kbhit():
+            key = ord(getch())
             if key == 27: #ESC
                 print "[PC]: ESC exiting"
                 break
@@ -56,7 +69,7 @@ try:
             elif key == 100: #d
                 rudder+=rg
             elif key == 224: #Special keys (arrows, f keys, ins, del, etc.)
-                key = ord(msvcrt.getch())
+                key = ord(getch())
                 if key == 80: #Down arrow
                     elevator-=eg
                 elif key == 72: #Up arrow
@@ -76,6 +89,6 @@ finally:
     arduino.close()
     # re-open the serial port which will also reset the Arduino Uno and
     # this forces the quadcopter to power off when the radio loses conection. 
-    arduino=serial.Serial('/dev/ttyACM1', 115200, timeout=.01)
+    arduino=serial.Serial(port, 115200, timeout=.01)
     arduino.close()
     # close it again so it can be reopened the next time it is run.  
