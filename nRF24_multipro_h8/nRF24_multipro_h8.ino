@@ -250,7 +250,7 @@ void loop()
           //Serial.print(p);
           int val=strtol(p, &errpt, 10);
           if (!*errpt) {
-            Serial.print(val);
+//            Serial.print(val);
             ppm[ppm_cnt]=val;
           }
           else
@@ -259,7 +259,7 @@ void loop()
           p = strtok_r(NULL,",",&i);
           ppm_cnt+=1;
         }
-        Serial.println("."); // prints "." at end of command
+//        Serial.println("."); // prints "." at end of command
         //ppm[0]=
         
         
@@ -291,7 +291,7 @@ void loop()
     };
     // Compare counter to debug for overruns
     if ((overrun_cnt<1000)||(stringComplete)) {
-      Serial.println(overrun_cnt);
+//      Serial.println(overrun_cnt);
     }
     
 
@@ -304,7 +304,7 @@ void loop()
 //        }            
     }
 //    telemetry_data.updated = 0;
-    Serial.println(overrun_cnt);
+//    Serial.println(overrun_cnt);
 }
 
 void set_txid(bool renew)
@@ -449,6 +449,7 @@ void init_protocol()
         case PROTO_BAYANG:
         case PROTO_BAYANG_SILVERWARE:
             Bayang_init();
+            Serial.println("Bayang Init done");
             Bayang_bind();
             Serial.println("H8 Init and bind on Bayang proto");
             break;
