@@ -27,7 +27,7 @@ enum {
     H8_3D_FLAG_RATE_HIGH= 0x04,
     H8_3D_FLAG_LED      = 0x08, // Light on H22
     H8_3D_FLAG_HEADLESS = 0x10, // RTH + headless on H8, headless on JJRC H20
-    H8_3D_FLAG_RTH      = 0x20, // 360Â° flip mode on H8 3D, RTH on JJRC H20
+    H8_3D_FLAG_RTH      = 0x20, // 360° flip mode on H8 3D, RTH on JJRC H20
 };
 
 enum {
@@ -81,7 +81,7 @@ void H8_3D_send_packet(uint8_t  bind)
         packet[6] = 0x08;
         packet[7] = 0x03;
         packet[9] = map(ppm[THROTTLE], PPM_MIN, PPM_MAX, 0, 0xff); // throttle
-        if( ppm[RUDDER] >= PPM_MID)
+        if( ppm[RUDDER] > PPM_MID)
             packet[10] = map(ppm[RUDDER], PPM_MID, PPM_MAX, 0, 0x3c); // rudder
         else
             packet[10] = map(ppm[RUDDER], PPM_MID, PPM_MIN, 0x80, 0xbc); // rudder
@@ -100,6 +100,7 @@ void H8_3D_send_packet(uint8_t  bind)
         if(packet[9] == 0x00 && packet[10] >= 0xb6 && packet[11] <= 0x49 && packet[12] >= 0xb5)
             packet[18] |= H8_3D_FLAG_CALIBRATE;
     }
+    packet[18] = 0x00;
     packet[19] = H8_3D_checksum(); // data checksum
     
     // Power on, TX mode, 2byte CRC
@@ -117,12 +118,17 @@ void H8_3D_send_packet(uint8_t  bind)
 
 void H8_3D_init()
 {
-    u8 i;
-    // tx id & rf channels
-    for(i=0; i<3; i++) {
-        H8_3D_txid[i] = transmitterID[i];
-        H8_3D_rf_channels[i] = 0x06 + (i*0x0f) + (((H8_3D_txid[i]>>4) + (H8_3D_txid[i]&0x0f)) % 0x0f);
-    }
+    // tx id
+    H8_3D_txid[0] = 0xa0 + (transmitterID[0] % 0x10);
+    H8_3D_txid[1] = 0xb0 + (transmitterID[1] % 0x20);
+    H8_3D_txid[2] = (transmitterID[2] % 0x20);
+    H8_3D_txid[3] = (transmitterID[3] % 0x11);
+    
+    // rf channels
+    H8_3D_rf_channels[0] = 0x06 + (((H8_3D_txid[0]>>8) + (H8_3D_txid[0]&0x0f)) % 0x0f);
+    H8_3D_rf_channels[1] = 0x15 + (((H8_3D_txid[1]>>8) + (H8_3D_txid[1]&0x0f)) % 0x0f);
+    H8_3D_rf_channels[2] = 0x24 + (((H8_3D_txid[2]>>8) + (H8_3D_txid[2]&0x0f)) % 0x0f);
+    H8_3D_rf_channels[3] = 0x33 + (((H8_3D_txid[3]>>8) + (H8_3D_txid[3]&0x0f)) % 0x0f);
     
     NRF24L01_Initialize();
     NRF24L01_SetTxRxMode(TX_EN);
