@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE eagle SYSTEM "eagle.dtd">
-<eagle version="8.4.1">
+<eagle version="8.4.0">
 <drawing>
 <settings>
 <setting alwaysvectorfont="no"/>
@@ -19332,7 +19332,6 @@ Source: www.kingbright.com</description>
 <part name="P+1" library="supply1" deviceset="+5V" device=""/>
 <part name="GND1" library="supply1" deviceset="GND" device="" value="3x2M_NM"/>
 <part name="GND12" library="supply1" deviceset="GND" device=""/>
-<part name="FID1" library="SmartPrj" deviceset="FIDUCIALMOUNT" device=""/>
 <part name="FID2" library="SmartPrj" deviceset="FIDUCIALMOUNT" device=""/>
 <part name="FID3" library="SmartPrj" deviceset="FIDUCIALMOUNT" device=""/>
 <part name="C6" library="SmartPrj" deviceset="C-EU" device="C0603" value="100n"/>
@@ -19421,7 +19420,6 @@ http://cdn.sparkfun.com/datasheets/Dev/Arduino/Boards/arduino-leonardo-reference
 </instance>
 <instance part="GND1" gate="1" x="-86.36" y="83.82" rot="R90"/>
 <instance part="GND12" gate="1" x="-137.16" y="96.52"/>
-<instance part="FID1" gate="G$1" x="-30.48" y="-48.26"/>
 <instance part="FID2" gate="G$1" x="-22.86" y="-48.26"/>
 <instance part="FID3" gate="G$1" x="-15.24" y="-48.26"/>
 <instance part="C6" gate="G$1" x="-109.22" y="10.16" rot="R180"/>

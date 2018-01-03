@@ -58,7 +58,7 @@ try:
                 print "[PC]: ESC exiting"
                 break
             elif key == 13: #Enter
-                #select()
+                select()
                 print "[PC]: Enter"
             elif key == 119: #w
                 throttle+=tg
