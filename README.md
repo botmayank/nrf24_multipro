@@ -9,10 +9,11 @@ https://github.com/perrytsao/nrf24_cx10_pc
 which in turn is based upon the awesome nrf24_multipro project by goebish:
 https://github.com/goebish/nrf24_multipro
 
-Arduino Nano + nRF24L01+ Module on perfboard to control Syma X20
-![Nano+nRF Syma X20](/media/Nano_X20.jpg)
+Arduino Nano and nRF24L01+ Module on perfboard to control Syma X20
 
-##Connections
+![Nano+nRF Syma X20](/media/Nano_X20?raw=true)
+
+## Connections
 
 | Arduino Uno/Nano    | NRF24L01+ Module               | nRF Pin No.   |
 |---------------------|--------------------------------|---------------|
