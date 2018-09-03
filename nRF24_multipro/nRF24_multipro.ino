@@ -1,4 +1,13 @@
 /*
+ Forked from perrytsao's Cheerson CX-10 project for JJRC H8 Mini/H8 3D 
+ as well as Syma X20.
+ This sketch is to interact with a Python script running on a Linux 
+ machine to control the drone.
+ *  
+ * 
+ * Mayank Joneja 3 Sep 2018
+ * botmayank on github.com
+ * 
  ******************************************************************************
  This is a fork of the Multi-Protocol nRF24L01 Tx project
  from goebish on RCgroups / github
@@ -69,7 +78,6 @@
 #include "iface_nrf24l01.h"
 #include <string.h>
 
-
 // ############ Wiring ################
 #define PPM_pin   2  // PPM in
 //SPI Comm.pins with nRF24L01
@@ -80,6 +88,12 @@
 #define CS_pin    A1 // CS   - A1
 
 #define ledPin    13 // LED  - D13
+
+enum {
+  SYMA,
+  JJRC_H8,
+  JJRC_H8_3D  
+};
 
 // SPI outputs
 #define MOSI_on PORTD |= _BV(3)  // PD3
@@ -160,6 +174,7 @@ char* c = new char[200 + 1]; // match 200 characters reserved for inputString la
 char* errpt;
 uint8_t ppm_cnt;
 
+uint8_t drone = SYMA;
 
 void setup()
 {
@@ -192,21 +207,17 @@ void loop()
 {
     uint32_t timeout;
     // reset / rebind
-    //Serial.println("begin loop");
     if(reset || ppm[AUX8] > PPM_MAX_COMMAND) {
         reset = false;
-        Serial.println("selecting protocol");
+        Serial.println("Selecting protocol");
         selectProtocol();        
-        Serial.println("selected protocol.");
         NRF24L01_Reset();
         Serial.println("nrf24l01 reset.");
         NRF24L01_Initialize();
         Serial.println("nrf24l01 init.");
         init_protocol();
-        Serial.println("init protocol complete.");
     }
     // process protocol
-    //Serial.println("processing protocol.");
     switch(current_protocol) {
         case PROTO_CG023: 
         case PROTO_YD829:
@@ -240,9 +251,7 @@ void loop()
     // The Arduino will also echo the command values that it assigned
     // to ppm
     if (stringComplete) {
-//        Serial.println(inputString);
-        // process string
-        
+        // process string        
         strcpy(c, inputString.c_str());
         p = strtok_r(c,",",&i); // returns substring up to first "," delimiter
         ppm_cnt=0;
@@ -260,9 +269,7 @@ void loop()
           ppm_cnt+=1;
         }
         Serial.println("."); // prints "." at end of command
-        //ppm[0]=
-        
-        
+        //ppm[0]=       
         
         // clear the string:
         inputString = "";
@@ -311,8 +318,6 @@ void set_txid(bool renew)
 
 void selectProtocol()
 {
-    // Modified and commented out lines so that Cheerson CX-10 Blue is always selected
-  
     // wait for multiple complete ppm frames
     ppm_ok = false;
     /*
@@ -331,51 +336,23 @@ void selectProtocol()
     set_txid(true);                      // Renew Transmitter ID
     
     // protocol selection
-    /*
-    // Rudder right + Aileron left
-    if(ppm[RUDDER] > PPM_MAX_COMMAND && ppm[AILERON] < PPM_MIN_COMMAND)
-        current_protocol = PROTO_H8_3D; // H8 mini 3D, H20 ...
-    
-    // Elevator down + Aileron right
-    else if(ppm[ELEVATOR] < PPM_MIN_COMMAND && ppm[AILERON] > PPM_MAX_COMMAND)
-        current_protocol = PROTO_YD829; // YD-829, YD-829C, YD-822 ...
-    
-    // Elevator down + Aileron left
-    else if(ppm[ELEVATOR] < PPM_MIN_COMMAND && ppm[AILERON] < PPM_MIN_COMMAND)
+    Serial.println("Current protocol:");
+    switch(drone){
+      case SYMA:
+        Serial.println("SYMA");
         current_protocol = PROTO_SYMAX5C1; // Syma X5C-1, X11, X11C, X12
-    
-    // Elevator up + Aileron right
-    else if(ppm[ELEVATOR] > PPM_MAX_COMMAND && ppm[AILERON] > PPM_MAX_COMMAND)
-   */
+        break;
+      case JJRC_H8:
+        Serial.println("BAYANG");
         current_protocol = PROTO_BAYANG;    // EAchine H8(C) mini, BayangToys X6/X7/X9, JJRC JJ850 ...
-    /*
-    // Elevator up + Aileron left
-    else if(ppm[ELEVATOR] > PPM_MAX_COMMAND && ppm[AILERON] < PPM_MIN_COMMAND) 
-        current_protocol = PROTO_H7;        // EAchine H7, MT99xx
-    
-    // Elevator up  
-    else if(ppm[ELEVATOR] > PPM_MAX_COMMAND)
-        current_protocol = PROTO_V2X2;       // WLToys V202/252/272, JXD 385/388, JJRC H6C ...
-        
-    // Elevator down
-    else if(ppm[ELEVATOR] < PPM_MIN_COMMAND) 
-        current_protocol = PROTO_CG023;      // EAchine CG023/CG031/3D X4, (todo :ATTOP YD-836/YD-836C) ...
-    
-    // Aileron right
-    else if(ppm[AILERON] > PPM_MAX_COMMAND)  
-   
-    current_protocol = PROTO_CX10_BLUE;  // Cheerson CX10(blue pcb, newer red pcb)/CX10-A/CX11/CX12 ... 
-    
-    // Aileron left
-    else if(ppm[AILERON] < PPM_MIN_COMMAND)  
-        current_protocol = PROTO_CX10_GREEN;  // Cheerson CX10(green pcb)... 
-    
-    // read last used protocol from eeprom
-    else 
-        current_protocol = constrain(EEPROM.read(ee_PROTOCOL_ID),0,PROTO_END-1);      
-    */
-    // update eeprom 
-    EEPROM.update(ee_PROTOCOL_ID, current_protocol);
+        break;
+      case JJRC_H8_3D:
+        Serial.println("JJRC_H8_3D");
+        current_protocol = PROTO_H8_3D; // H8 mini 3D, H20 ...
+        break;      
+      default:
+        Serial.println("None!");
+    }    
     // wait for safe throttle
     /*while(ppm[THROTTLE] > PPM_SAFE_THROTTLE) {
         delay(100);
@@ -408,28 +385,17 @@ void init_protocol()
         case PROTO_BAYANG:
             Bayang_init();
             Bayang_bind();
-            Serial.println("Bayang-initialized and bound");
+            Serial.println("Bayang initialized and bound");
             break;
         case PROTO_SYMAX5C1:
             Symax_init();
             SymaX_bind();
+            Serial.println("Syma initialized and bound");
             break;
         case PROTO_H8_3D:
             H8_3D_init();
             H8_3D_bind();
+            Serial.println("H8 3D initialized and bound");
             break;
     }
 }
-
-/* This function not needed - ppm values are updated in main loop
-// update ppm values out of ISR    
-void update_ppm()
-{
-    for(uint8_t ch=0; ch<CHANNELS; ch++) {
-        ATOMIC_BLOCK(ATOMIC_RESTORESTATE) {
-            ppm[ch] = Servo_data[ch];
-        }
-    }    
-}
-*/
-
