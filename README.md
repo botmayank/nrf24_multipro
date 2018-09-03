@@ -11,7 +11,7 @@ https://github.com/goebish/nrf24_multipro
 
 Arduino Nano and nRF24L01+ Module on perfboard to control Syma X20
 
-![Nano+nRF Syma X20](/media/Nano_X20?raw=true)
+![Nano+nRF Syma X20](/media/Nano_X20.jpeg?raw=true)
 
 ## Connections
 
