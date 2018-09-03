@@ -9,6 +9,18 @@ https://github.com/perrytsao/nrf24_cx10_pc
 which in turn is based upon the awesome nrf24_multipro project by goebish:
 https://github.com/goebish/nrf24_multipro
 
-Basic setup using Arduino Uno and nRF24L01+ module to control JJRC H8 mini:
-![Setup](https://i.imgur.com/PkZDO9w.jpg)
+Arduino Nano + nRF24L01+ Module on perfboard to control Syma X20
+![Nano+nRF Syma X20](/media/Nano_X20.jpg)
 
+##Connections
+
+| Arduino Uno/Nano    | NRF24L01+ Module               | nRF Pin No.   |
+|---------------------|--------------------------------|---------------|
+| GND                 | GND                            | 1             |
+| 3.3V                | VCC                            | 2             |
+| D5 (Digital 5)      | CE                             | 3             |
+| A1 (Analog 1)       | CSN                            | 4             |
+| D4 (Digital 4)      | SCK                            | 5             |
+| D3 (Digital 3)      | MOSI                           | 6             |
+| A0 (Analog 0)       | MISO                           | 7             |
+| Not Used            | IRQ                            | 8             |
