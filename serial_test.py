@@ -32,7 +32,7 @@ ag=50
 eg=50
 rg=50
 
-port = '/dev/ttyACM0'
+port = '/dev/ttyUSB0'
 
 arduino = serial.Serial(port, 115200, timeout=0.01)
 
