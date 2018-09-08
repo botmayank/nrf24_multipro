@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # -*- coding: utf-8 -*-
 """
 Serial_test.py
@@ -14,7 +15,7 @@ This is modified to implement kbhit and getch functions of msvcrt for Linux usin
 STDIO calls based on the recipe:
 http://code.activestate.com/recipes/572182-how-to-implement-kbhit-on-linux/
 
-Created on Sat Nov 25 18:54:32 2017
+Created on Sat Nov 25 18:54:10 2017
 
 @author: perrytsao
 @author: botmayank
@@ -22,9 +23,9 @@ Created on Sat Nov 25 18:54:32 2017
 import serial, time, sys
 from select import select
 
-throttle=1000
-aileron=1500
-elevator=1500
+throttle=1000 
+aileron=1500 #roll 
+elevator=1500 # pitch
 rudder=1500 # yaw, rotates the drone
 
 tg=10
@@ -42,7 +43,7 @@ def getch():
 
 def kbhit():
     dr, dw, de = select([sys.stdin], [], [], 0)
-    return dr <> []
+    return dr != []
 try:
     arduino=serial.Serial(port, 115200, timeout=.01)
     time.sleep(1) #give the connection a second to settle
