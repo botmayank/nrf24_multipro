@@ -35,6 +35,8 @@ TODO: Figure out thresholds/sequences to fly quad properly for:
 2. Pitch
 3. Yaw
 
+TODO: make pitch work in update_input()
+
 TODO: Get Arduino responses to print on the screen
 
 Created on Sun Sep 9 2018 02:24:18 2017
@@ -66,15 +68,30 @@ def reset_inputs():
 def clamp_input(n):
     return max(INPUT_MIN, min(n, INPUT_MAX))
 
-def update_throttle(val, delta):
-    global throttle
-    th = val + delta
-    throttle = clamp_input(th)
-
 def update_pitch(val, delta):
     global elevator
-    pit = val + delta
-    elevator = clamp_input(pit)
+    temp  = val + delta
+    elevator = clamp_input(temp)
+
+def update_input(input_type, val, delta):
+    global throttle, aileron, elevator, rudder
+    temp = val + delta
+
+    if input_type == "thrust":
+        throttle = clamp_input(temp)
+
+    elif input_type == "roll":
+        aileron = clamp_input(temp)
+
+    elif input_type == "pitch":
+        elevator == clamp_input(temp)
+        screen.addstr(0, 5, "Pitch is: " + str(elevator))
+
+    elif input_type == "yaw":
+        rudder = clamp_input(temp)
+
+    else:
+        screen.addstr(5, 0, "Invalid Input!")
 
 def max_throttle():
     global throttle
@@ -86,9 +103,9 @@ def go_throttle():
 
 # deltas to increase/decrease RC inputs
 tg = 5
-ag = 50
-eg = 50
-rg = 50
+ag = 10
+eg = 10
+rg = 10
 
 # serial init
 port = '/dev/ttyUSB0'
@@ -131,47 +148,55 @@ try:
         elif char == curses.KEY_RIGHT:
             screen.addstr(0, 0, 'right')
             screen.addstr(1, 0, 'Roll right')
-            aileron += ag
+            # aileron += ag
+            update_input("roll", aileron, +ag)
 
         elif char == curses.KEY_LEFT:
             screen.addstr(0, 0, 'left')
             screen.addstr(1, 0, 'Roll left')
-            aileron -= ag
+            # aileron -= ag
+            update_input("roll", aileron, -ag)
 
         elif char == curses.KEY_UP:
             screen.addstr(0, 0, 'up')
             screen.addstr(1, 0, 'Pitch forward')
             # elevator += eg
             update_pitch(elevator, +eg)
+            # update_input("pitch", elevator, +eg)
 
-        elif char == curses.KEY_DOWN:           
+        elif char == curses.KEY_DOWN:
             screen.addstr(0, 0, 'down')
             screen.addstr(1, 0, 'Pitch back')
             # elevator-=eg
             update_pitch(elevator, -eg)
+            # update_input("pitch", elevator, -eg)
 
         # Thrust/Yaw
         elif char == ord('w'):
             screen.addstr(0,0, 'w')
             screen.addstr(1, 0, 'Thrust up')
             # throttle += tg
-            update_throttle(throttle, +tg)
+            # update_throttle(throttle, +tg)
+            update_input("thrust", throttle, +tg)
 
         elif char == ord('a'):
             screen.addstr(0,0, 'a')
             screen.addstr(1, 0, 'Yaw counter-clockwise')
-            rudder -= rg
+            # rudder -= rg
+            update_input("yaw", rudder, -rg)
 
         elif char == ord('s'):
             screen.addstr(0,0, 's')
             screen.addstr(1, 0, 'Thrust down')
             # throttle -= tg
-            update_throttle(throttle, -tg)
+            # update_throttle(throttle, -tg)
+            update_input("thrust", throttle, -tg)
 
         elif char == ord('d'):
             screen.addstr(0,0, 'd')
             screen.addstr(1, 0, 'Yaw clockwise')
-            rudder += rg
+            # rudder += rg
+            update_input("yaw", rudder, +rg)
 
         #Special Keys
         elif char == ord('r'): # Default values useful for landing
@@ -186,8 +211,9 @@ try:
             screen.addstr(0,0, 'Throttle Go!')
             go_throttle()
 
-        command = "%i,%i,%i,%i" %(throttle, aileron, elevator, rudder)
+        command = "%i, %i, %i, %i" %(throttle, aileron, elevator, rudder)
         # string commands to the Arduino are prefaced with  [PC]
+        screen.addstr(4, 0, "[PC]: Thr, Roll, Pitch, Yaw:" )
         screen.addstr(5, 0, "[PC]: " + command )
         arduino.write(command + "\n")
 
