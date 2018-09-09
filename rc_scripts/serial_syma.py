@@ -35,7 +35,7 @@ TODO: Figure out thresholds/sequences to fly quad properly for:
 2. Pitch
 3. Yaw
 
-TODO: make pitch work in update_input()
+TODO: Simultaneously control left and right joysticks, multithreaded?
 
 TODO: Get Arduino responses to print on the screen
 
@@ -68,28 +68,18 @@ def reset_inputs():
 def clamp_input(n):
     return max(INPUT_MIN, min(n, INPUT_MAX))
 
-def update_pitch(val, delta):
-    global elevator
-    temp  = val + delta
-    elevator = clamp_input(temp)
-
 def update_input(input_type, val, delta):
     global throttle, aileron, elevator, rudder
     temp = val + delta
 
     if input_type == "thrust":
         throttle = clamp_input(temp)
-
     elif input_type == "roll":
         aileron = clamp_input(temp)
-
     elif input_type == "pitch":
-        elevator == clamp_input(temp)
-        screen.addstr(0, 5, "Pitch is: " + str(elevator))
-
+        elevator = clamp_input(temp)
     elif input_type == "yaw":
         rudder = clamp_input(temp)
-
     else:
         screen.addstr(5, 0, "Invalid Input!")
 
@@ -148,54 +138,42 @@ try:
         elif char == curses.KEY_RIGHT:
             screen.addstr(0, 0, 'right')
             screen.addstr(1, 0, 'Roll right')
-            # aileron += ag
             update_input("roll", aileron, +ag)
 
         elif char == curses.KEY_LEFT:
             screen.addstr(0, 0, 'left')
             screen.addstr(1, 0, 'Roll left')
-            # aileron -= ag
             update_input("roll", aileron, -ag)
 
         elif char == curses.KEY_UP:
             screen.addstr(0, 0, 'up')
             screen.addstr(1, 0, 'Pitch forward')
-            # elevator += eg
-            update_pitch(elevator, +eg)
-            # update_input("pitch", elevator, +eg)
+            update_input("pitch", elevator, +eg)
 
         elif char == curses.KEY_DOWN:
             screen.addstr(0, 0, 'down')
             screen.addstr(1, 0, 'Pitch back')
-            # elevator-=eg
-            update_pitch(elevator, -eg)
-            # update_input("pitch", elevator, -eg)
+            update_input("pitch", elevator, -eg)
 
         # Thrust/Yaw
         elif char == ord('w'):
             screen.addstr(0,0, 'w')
             screen.addstr(1, 0, 'Thrust up')
-            # throttle += tg
-            # update_throttle(throttle, +tg)
             update_input("thrust", throttle, +tg)
 
         elif char == ord('a'):
             screen.addstr(0,0, 'a')
             screen.addstr(1, 0, 'Yaw counter-clockwise')
-            # rudder -= rg
             update_input("yaw", rudder, -rg)
 
         elif char == ord('s'):
             screen.addstr(0,0, 's')
             screen.addstr(1, 0, 'Thrust down')
-            # throttle -= tg
-            # update_throttle(throttle, -tg)
             update_input("thrust", throttle, -tg)
 
         elif char == ord('d'):
             screen.addstr(0,0, 'd')
             screen.addstr(1, 0, 'Yaw clockwise')
-            # rudder += rg
             update_input("yaw", rudder, +rg)
 
         #Special Keys
