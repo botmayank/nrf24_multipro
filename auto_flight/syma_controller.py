@@ -7,7 +7,8 @@ Created on Fri Sep 14 2018 23:55:11 2018
 
 @author: botmayank
 """
-import serial, time, sys
+import serial
+import time
 
 INPUT_MIN = 1000
 INPUT_MID = 1500
@@ -21,20 +22,21 @@ ag = 20
 eg = 20
 rg = 20
 
+
 class SymaController:
     """ Syma Controller class """
 
-    throttle = INPUT_MIN # thrust
+    throttle = INPUT_MIN  # thrust
     aileron = INPUT_MID  # roll
-    elevator = INPUT_MID # pitch
-    rudder = INPUT_MID   # yaw
+    elevator = INPUT_MID  # pitch
+    rudder = INPUT_MID  # yaw
     arduino = None
     port = "/dev/ttyUSB0"
 
     def __init__(self, port):
         self.port = port
         self.arduino = serial.Serial(port, 115200, timeout=0.01)
-        time.sleep(1) #give the connection a second to settle
+        time.sleep(1)  # give the connection a second to settle
         self.arduino.write("1000, 1500, 1500, 1500\n")
 
     def __del__(self):
@@ -42,7 +44,7 @@ class SymaController:
         self.arduino.close()
         # re-open the serial port which will also reset the Arduino Uno and
         # this forces the quadcopter to power off when the radio loses conection. 
-        self.arduino=serial.Serial(self.port, 115200, timeout=.01)
+        self.arduino = serial.Serial(self.port, 115200, timeout=.01)
         # close it again so it can be reopened the next time it is run.    
         self.arduino.close()
 
@@ -59,7 +61,7 @@ class SymaController:
         temp = val + delta
 
         if input_type == "thrust":
-            self.throttle =self. _clamp_input(temp)
+            self.throttle = self._clamp_input(temp)
         elif input_type == "roll":
             self.aileron = self._clamp_input(temp)
         elif input_type == "pitch":
@@ -111,6 +113,6 @@ class SymaController:
         self.elevator = INPUT_MID
 
     def send_command(self):
-        command = "%i, %i, %i, %i" %(self.throttle, self.aileron, self.elevator, self.rudder)
+        command = "%i, %i, %i, %i" % (self.throttle, self.aileron, self.elevator, self.rudder)
         self.arduino.write(command + "\n")
         return command
