@@ -39,7 +39,7 @@ TODO: Simultaneously control left and right joysticks, multithreaded?
 
 TODO: Get Arduino responses to print on the screen
 
-Created on Sun Sep 9 2018 02:24:18 2017
+Created on Sun Sep 9 2018 02:24:18 2018
 
 @author: botmayank
 """
@@ -56,6 +56,12 @@ throttle = INPUT_MIN # thrust
 aileron = INPUT_MID  # roll
 elevator = INPUT_MID # pitch
 rudder = INPUT_MID   # yaw
+
+# deltas to increase/decrease RC inputs
+tg = 5
+ag = 20
+eg = 20
+rg = 20
 
 # quadcopter RC inputs
 def reset_inputs():
@@ -91,11 +97,11 @@ def go_throttle():
     global throttle
     throttle = THROTTLE_GO
 
-# deltas to increase/decrease RC inputs
-tg = 5
-ag = 10
-eg = 10
-rg = 10
+def reset_rotation():
+    global aileron, elevator, rudder
+    aileron = INPUT_MID  # roll
+    elevator = INPUT_MID # pitch
+    rudder = INPUT_MID   # yaw
 
 # serial init
 port = '/dev/ttyUSB0'
@@ -188,6 +194,11 @@ try:
         elif char == ord('g'): #TH Go
             screen.addstr(0,0, 'Throttle Go!')
             go_throttle()
+        
+        elif char == ord('v'): #Reset Roll, Pitch, Yaw
+            screen.addstr(0,0, 'Reset rotation')
+            reset_rotation()
+
 
         command = "%i, %i, %i, %i" %(throttle, aileron, elevator, rudder)
         # string commands to the Arduino are prefaced with  [PC]
