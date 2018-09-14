@@ -1,3 +1,7 @@
+# specifics
+
+vision/calibration/output/
+
 *.cppproj
 *.atsln
 *.atsuo
