@@ -1,4 +1,3 @@
-#!/usr/bin/python
 # -*- coding: utf-8 -*-
 """
 control.py
@@ -21,24 +20,43 @@ PORT = "/dev/ttyUSB0"
 Syma = None
 arucoFinder = None
 
-epsilon = 0.5
-target = 0.0
-thrust_gain = 0.1
+epsilon = 5
+target = 80.0
+thrust_gain = 5
+
+# prev_height = 0.0
+count = 0
+land_thresh = 20  # no. of lost frames after which it should land
 
 
-def get_height(camera, camera_matrix, dist_matrix):
-    return arucoFinder.run_camera_and_detect(camera, camera_matrix, dist_matrix)
+def get_height():
+    global count
+    count = 0
+    current_height = arucoFinder.run_camera_and_detect()
+    if current_height == -1:
+        count += 1
+        if count == land_thresh:
+            Syma.reset_inputs()
+            count = 0
+            time.sleep(2)
+            Syma.init_throttle()
+            current_height = 0.0
+        else:
+            Syma.thrust("mid")
+            current_height = target
+    else:
+        count = 0
+
+    return current_height
 
 
-def control_listener(camera, camera_matrix, dist_matrix):
+def control_listener():
     while True:
-        # char = screen.getch()
-        # screen.erase()
-        # parse_key_input(char)
-        height = get_height(camera, camera_matrix, dist_matrix)
-        print("\nCurrent height: " + str(height))
+        height = get_height()
+        print("<===============================>")
+        print("Current height: " + str(height))
         control_logic(height)
-        print("\nTarget height: " + str(target))
+        print("Target height: " + str(target))
 
         cmd = Syma.send_command()
         print("\nCommand sent: ")
@@ -49,12 +67,12 @@ def control_listener(camera, camera_matrix, dist_matrix):
 def control_logic(val):
     # Logic for controlling height with thrust
     global epsilon, target, thrust_gain
-    if abs(val - target) < epsilon:
-        # Hover
-        Syma.thrust("mid")
-    elif val > target + epsilon:
+    # if abs(val - target) < epsilon:
+    #     # Hover
+    #     Syma.thrust("mid")
+    if val > target + epsilon:
         Syma.thrust("down", thrust_gain)
-    elif val < target - epsilon:
+    elif val <= target - epsilon:
         Syma.thrust("up", thrust_gain)
 
 
@@ -62,25 +80,25 @@ if __name__ == "__main__":
     try:
         # Init Syma Controller
         Syma = SymaController(PORT)
+        time.sleep(2)
 
+        print("Init Throttle: ")
         # Init Throttle
         Syma.init_throttle()
         time.sleep(1)
 
         # Get Target height
-        target = 15.0
+        # target = 50.0
 
         # Setup the camera
-        arucoFinder = ArucoFinder()
-        camera, camera_matrix, dist_matrix = arucoFinder.setup_camera(640, 480, 30)
+        arucoFinder = ArucoFinder(640, 480, 30)
 
         # Start control listener
-        control_listener(camera, camera_matrix, dist_matrix)
-
-        arucoFinder.finalize_camera(camera)
+        control_listener()
 
     except KeyboardInterrupt:
         pass
     finally:
         # Cleanly exit
         del Syma
+        del arucoFinder

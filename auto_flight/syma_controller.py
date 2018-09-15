@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # -*- coding: utf-8 -*-
 """
 syma_controller.py
@@ -37,7 +37,7 @@ class SymaController:
         self.port = port
         self.arduino = serial.Serial(port, 115200, timeout=0.01)
         time.sleep(1)  # give the connection a second to settle
-        self.arduino.write("1000, 1500, 1500, 1500\n")
+        self.arduino.write(("1000, 1500, 1500, 1500\n").encode())
 
     def __del__(self):
         # close the connection
@@ -47,11 +47,6 @@ class SymaController:
         self.arduino = serial.Serial(self.port, 115200, timeout=.01)
         # close it again so it can be reopened the next time it is run.    
         self.arduino.close()
-
-    def init_throttle(self):
-        self.max_throttle()
-        time.sleep(0.5)
-        self.go_throttle()
 
     def _clamp_input(self, n):
         return max(INPUT_MIN, min(n, INPUT_MAX))
@@ -114,5 +109,21 @@ class SymaController:
 
     def send_command(self):
         command = "%i, %i, %i, %i" % (self.throttle, self.aileron, self.elevator, self.rudder)
-        self.arduino.write(command + "\n")
+        self.arduino.write(str.encode(command + "\n"))
         return command
+
+    def init_throttle(self):
+        self.max_throttle()
+        cmd = self.send_command()
+        print("\nCommand sent: ")
+        print("Thr, Roll, Pitch, Yaw:")
+        print(cmd)
+
+        time.sleep(0.5)
+        self.go_throttle()
+        cmd = self.send_command()
+        print("\nCommand sent: ")
+        print("Thr, Roll, Pitch, Yaw:")
+        print(cmd)
+
+        time.sleep(0.5)
