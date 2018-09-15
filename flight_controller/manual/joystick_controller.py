@@ -4,10 +4,15 @@ import time
 
 import pygame
 
+from flight_controller.syma_controller import SymaController
+
 try:
     import curses
 except:
     curses = False
+
+syma = None
+PORT = "/dev/ttyUSB0"
 
 DASHBOARD = """
  Flight control for Eachine/JJRC
@@ -25,7 +30,8 @@ DASHBOARD = """
                [s]                              [down]
 
 
-roll:{roll:>3} pitch:{pitch:>3} throttle:{throttle:>3} yaw:{yaw:>3}
+inputs : roll:{roll:>3} pitch:{pitch:>3} throttle:{throttle:>3} yaw:{yaw:>3}
+actuals: roll:{actual_roll:>3} pitch:{actual_pitch:>3} throttle:{actual_throttle:>3} yaw:{actual_yaw:>3} 
 pressed: {pressed_keys}
 Command for drone: 0x{hex_command}
 
@@ -80,7 +86,8 @@ def init_screen():
     return screen
 
 
-def redraw_screen(screen, roll, pitch, throttle, yaw, pressed=None, drone_command=''):
+def redraw_screen(screen, roll, pitch, throttle, yaw, actual_roll, actual_pitch, actual_throttle, actual_yaw,
+                  pressed=None, drone_command=''):
     if pressed is None:
         pressed = []
 
@@ -99,6 +106,10 @@ def redraw_screen(screen, roll, pitch, throttle, yaw, pressed=None, drone_comman
         'roll': roll,
         'pitch': pitch,
         'throttle': throttle,
+        'actual_roll': actual_roll,
+        'actual_pitch': actual_pitch,
+        'actual_yaw': actual_yaw,
+        'actual_throttle': actual_throttle,
         'yaw': yaw,
     }
 
@@ -138,7 +149,7 @@ if DEBUG:
     MAX_POWER = 1.0
 
 
-def main_loop(screen=None, kbd=None, joystick=None):
+def main_loop(screen=None):
     roll, pitch, throttle, yaw = 0, 0, 0, 0
     cmd = None
 
@@ -151,7 +162,7 @@ def main_loop(screen=None, kbd=None, joystick=None):
         while 1:
             roll, pitch, throttle, yaw, commands, pressed = parse_joystick_input(joystick)
 
-            max_power = 1.0 if 'force' in commands else MAX_POWER
+            max_power = 0.3 if 'force' in commands else MAX_POWER
 
             if 'shut_off' in commands:
                 cmd = 'shut_off'
@@ -170,20 +181,41 @@ def main_loop(screen=None, kbd=None, joystick=None):
 
             pygame.event.pump()
 
+            syma.roll(roll)
+            syma.pitch(pitch)
+            syma.yaw(yaw)
+            syma.delta_thrust_relative(throttle)
+
             if screen is not None:
-                redraw_screen(screen, roll, pitch, throttle, yaw, pressed=pressed)
+                redraw_screen(screen, roll, pitch, throttle, yaw, syma.aileron, syma.elevator, syma.throttle,
+                              syma.rudder, pressed=pressed)
             clock.tick(20)
 
+            syma.send_command()
 
     finally:
         curses.endwin()
 
 
 if __name__ == "__main__":
-    pygame.init()
-    pygame.joystick.init()
-    # if you are running script without TTY, don't install curses in virtualenv
-    screen = init_screen() if curses else None
-    kbd = None
-    clock = pygame.time.Clock()
-    main_loop(screen)
+    try:
+        # Initialize Syma
+        syma = SymaController(PORT)
+
+        # Initialize pygame
+        pygame.init()
+        pygame.joystick.init()
+
+        # Initialize the curses screen
+        screen = init_screen() if curses else None
+        clock = pygame.time.Clock()
+
+        syma.go_throttle()
+        syma.send_command()
+
+        main_loop(screen)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        # gracefully cleanup
+        del syma

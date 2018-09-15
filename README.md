@@ -25,3 +25,8 @@ Arduino Nano and nRF24L01+ Module on perfboard to control Syma X20
 | D3 (Digital 3)      | MOSI                           | 6             |
 | A0 (Analog 0)       | MISO                           | 7             |
 | Not Used            | IRQ                            | 8             |
+
+# Configure
+
+run `export PYTHONPATH=.` at the root of the project folder to run the files from terminal. 
+Why this isn't needed on Pycharm is because it sets it for you. 

@@ -18,7 +18,7 @@ INPUT_MAX = 2000
 THROTTLE_GO = 1530
 
 # deltas to increase/decrease RC inputs
-tg = 5
+tg = 50
 ag = 20
 eg = 20
 rg = 20
@@ -36,7 +36,13 @@ class SymaController:
 
     def __init__(self, port):
         self.port = port
-        self.arduino = serial.Serial(port, 115200, timeout=0.01)
+
+        try:
+            self.arduino = serial.Serial(port, 115200, timeout=0.01)
+            self.arduino.inWaiting()
+        except:
+            exit("No serial connection")
+
         time.sleep(1)  # give the connection a second to settle
         self.arduino.write(("1000, 1500, 1500, 1500\n").encode())
 
@@ -54,10 +60,10 @@ class SymaController:
 
     def _get_mapped_value(self, n):
         """
-        :param n: value between -100 and 100
-        :return: the mapped value from [-100,100] to [MIN, MAX]
+        :param n: value between -1 and 1
+        :return: the mapped value from [-1,1] to [MIN, MAX]
         """
-        return INPUT_MIN + (INPUT_MAX - INPUT_MIN) * ((100 + n) / 200)
+        return INPUT_MIN + (INPUT_MAX - INPUT_MIN) * ((1.0 + n) / 2.0)
 
     def _update_input(self, input_type, val, delta):
         # global throttle, aileron, elevator, rudder
@@ -98,9 +104,24 @@ class SymaController:
         elif dir == "mid":
             self.throttle = INPUT_MID
 
+    def delta_thrust_relative(self, gain):
+        """
+        :param gain: value between [-1,1] of change thrust_gain with which delta increases/decreases
+        """
+        self._update_input("thrust", self.throttle, gain * tg)
+
+    def delta_roll_relative(self, gain):
+        self._update_input("roll", self.aileron, gain * ag)
+
+    def delta_pitch_relative(self, gain):
+        self._update_input("pitch", self.elevator, gain * eg)
+
+    def delta_yaw_relative(self, gain):
+        self._update_input("yaw", self.rudder, gain * rg)
+
     def roll(self, roll):
         """
-        @:param roll: between -100 and 100
+        @:param roll: between -1 and 1
         """
         self.aileron = self._get_mapped_value(roll)
 
@@ -123,7 +144,10 @@ class SymaController:
         self.throttle = INPUT_MAX
 
     def go_throttle(self):
+        self.throttle = INPUT_MAX
+        self.send_command()
         self.throttle = THROTTLE_GO
+        self.send_command()
 
     def reset_rotation(self):
         self.aileron = INPUT_MID
