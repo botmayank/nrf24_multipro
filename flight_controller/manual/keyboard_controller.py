@@ -15,12 +15,12 @@ Created on Fri Sep 14 2018 23:55:11 2018
 import curses
 import sys
 
-from auto_flight.syma_controller import SymaController
+from flight_controller.syma_controller import SymaController
 
 PORT = "/dev/ttyUSB0"
 
 screen = None
-Syma = None
+syma = None
 
 
 def screen_init():
@@ -49,7 +49,7 @@ def key_listener():
         char = screen.getch()
         screen.erase()
         parse_key_input(char)
-        cmd = Syma.send_command()
+        cmd = syma.send_command()
         screen.addstr(3, 0, "Syma Controller Command: ")
         screen.addstr(4, 0, "Thr, Roll, Pitch, Yaw:")
         screen.addstr(5, 0, cmd)
@@ -64,64 +64,64 @@ def parse_key_input(char):
     elif char == curses.KEY_RIGHT:
         screen.addstr(0, 0, 'right')
         screen.addstr(1, 0, 'Roll right')
-        Syma.delta_roll("right")
+        syma.delta_roll("right")
 
     elif char == curses.KEY_LEFT:
         screen.addstr(0, 0, 'left')
         screen.addstr(1, 0, 'Roll left')
-        Syma.delta_roll("left")
+        syma.delta_roll("left")
 
     elif char == curses.KEY_UP:
         screen.addstr(0, 0, 'up')
         screen.addstr(1, 0, 'Pitch forward')
-        Syma.delta_pitch("forward")
+        syma.delta_pitch("forward")
 
     elif char == curses.KEY_DOWN:
         screen.addstr(0, 0, 'down')
         screen.addstr(1, 0, 'Pitch back')
-        Syma.delta_pitch("back")
+        syma.delta_pitch("back")
 
     # Thrust/Yaw
     elif char == ord('w'):
         screen.addstr(0, 0, 'w')
         screen.addstr(1, 0, 'Thrust up')
-        Syma.delta_thrust("up")
+        syma.delta_thrust("up")
 
     elif char == ord('s'):
         screen.addstr(0, 0, 's')
         screen.addstr(1, 0, 'Thrust down')
-        Syma.delta_thrust("down")
+        syma.delta_thrust("down")
 
     elif char == ord('a'):
         screen.addstr(0, 0, 'a')
         screen.addstr(1, 0, 'Yaw counter-clockwise')
-        Syma.delta_yaw("ccw")
+        syma.delta_yaw("ccw")
 
     elif char == ord('d'):
         screen.addstr(0, 0, 'd')
         screen.addstr(1, 0, 'Yaw clockwise')
-        Syma.delta_yaw("cw")
+        syma.delta_yaw("cw")
 
     # Special Keys
     elif char == ord('r'):  # Default values useful for landing
         screen.addstr(0, 0, 'r')
         screen.addstr(1, 0, 'Reset all inputs')
-        Syma.reset_inputs()
+        syma.reset_inputs()
 
     elif char == ord('t'):  # TH Max
         screen.addstr(0, 0, 't')
         screen.addstr(1, 0, 'Throttle Max!')
-        Syma.max_throttle()
+        syma.max_throttle()
 
     elif char == ord('g'):  # TH Go
         screen.addstr(0, 0, 'g')
         screen.addstr(1, 0, 'Throttle Go!')
-        Syma.go_throttle()
+        syma.go_throttle()
 
     elif char == ord('v'):  # Reset Roll, Pitch, Yaw
         screen.addstr(0, 0, 'v')
         screen.addstr(1, 0, 'Reset rotation')
-        Syma.reset_rotation()
+        syma.reset_rotation()
 
 
 if __name__ == "__main__":
@@ -129,7 +129,7 @@ if __name__ == "__main__":
         # Initialize curses screen
         screen_init()
         # Init Syma Controller
-        Syma = SymaController(PORT)
+        syma = SymaController(PORT)
 
         # Start key listener
         key_listener()
@@ -138,5 +138,5 @@ if __name__ == "__main__":
         pass
     finally:
         # Cleanly exit
-        del Syma
+        del syma
         screen_deinit()

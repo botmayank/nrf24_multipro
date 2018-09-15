@@ -13,11 +13,11 @@ Created on Fri Sep 14 2018 23:55:11 2018
 
 import time
 
-from auto_flight.syma_controller import SymaController
+from flight_controller.syma_controller import SymaController
 from vision.aruco.aruco_finder import ArucoFinder
 
 PORT = "/dev/ttyUSB0"
-Syma = None
+syma = None
 arucoFinder = None
 
 epsilon = 5
@@ -36,13 +36,13 @@ def get_height():
     if current_height == -1:
         count += 1
         if count == land_thresh:
-            Syma.reset_inputs()
+            syma.reset_inputs()
             count = 0
             time.sleep(2)
-            Syma.init_throttle()
+            syma.init_throttle()
             current_height = 0.0
         else:
-            Syma.delta_thrust("mid")
+            syma.delta_thrust("mid")
             current_height = target
     else:
         count = 0
@@ -58,7 +58,7 @@ def control_listener():
         control_logic(height)
         print("Target height: " + str(target))
 
-        cmd = Syma.send_command()
+        cmd = syma.send_command()
         print("\nCommand sent: ")
         print("Thr, Roll, Pitch, Yaw:")
         print(cmd)
@@ -71,20 +71,20 @@ def control_logic(val):
     #     # Hover
     #     Syma.thrust("mid")
     if val > target + epsilon:
-        Syma.delta_thrust("down", thrust_gain)
+        syma.delta_thrust("down", thrust_gain)
     elif val <= target - epsilon:
-        Syma.delta_thrust("up", thrust_gain)
+        syma.delta_thrust("up", thrust_gain)
 
 
 if __name__ == "__main__":
     try:
         # Init Syma Controller
-        Syma = SymaController(PORT)
+        syma = SymaController(PORT)
         time.sleep(2)
 
         print("Init Throttle: ")
         # Init Throttle
-        Syma.init_throttle()
+        syma.init_throttle()
         time.sleep(1)
 
         # Get Target height
@@ -100,5 +100,5 @@ if __name__ == "__main__":
         pass
     finally:
         # Cleanly exit
-        del Syma
+        del syma
         del arucoFinder
