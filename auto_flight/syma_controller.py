@@ -52,6 +52,13 @@ class SymaController:
     def _clamp_input(self, n):
         return max(INPUT_MIN, min(n, INPUT_MAX))
 
+    def _get_mapped_value(self, n):
+        """
+        :param n: value between -100 and 100
+        :return: the mapped value from [-100,100] to [MIN, MAX]
+        """
+        return INPUT_MIN + (INPUT_MAX - INPUT_MIN) * ((100 + n) / 200)
+
     def _update_input(self, input_type, val, delta):
         # global throttle, aileron, elevator, rudder
         temp = val + delta
@@ -65,31 +72,46 @@ class SymaController:
         elif input_type == "yaw":
             self.rudder = self._clamp_input(temp)
 
-    def roll(self, dir, delta=ag):
+    def delta_roll(self, dir, delta=ag):
         if dir == "right":
             self._update_input("roll", self.aileron, +delta)
         elif dir == "left":
             self._update_input("roll", self.aileron, -delta)
 
-    def pitch(self, dir, delta=eg):
+    def delta_pitch(self, dir, delta=eg):
         if dir == "forward":
             self._update_input("pitch", self.elevator, +delta)
         elif dir == "back":
             self._update_input("pitch", self.elevator, -delta)
 
-    def yaw(self, dir, delta=rg):
+    def delta_yaw(self, dir, delta=rg):
         if dir == "ccw":
             self._update_input("yaw", self.rudder, -delta)
         elif dir == "cw":
             self._update_input("yaw", self.rudder, +delta)
 
-    def thrust(self, dir, delta=tg):
+    def delta_thrust(self, dir, delta=tg):
         if dir == "up":
             self._update_input("thrust", self.throttle, +delta)
         elif dir == "down":
             self._update_input("thrust", self.throttle, -delta)
         elif dir == "mid":
             self.throttle = INPUT_MID
+
+    def roll(self, roll):
+        """
+        @:param roll: between -100 and 100
+        """
+        self.aileron = self._get_mapped_value(roll)
+
+    def pitch(self, pitch):
+        self.elevator = self._get_mapped_value(pitch)
+
+    def yaw(self, yaw):
+        self.rudder = self._get_mapped_value(yaw)
+
+    def thrust(self, throttle):
+        self.throttle = self._get_mapped_value(throttle)
 
     def reset_inputs(self):
         self.throttle = INPUT_MIN

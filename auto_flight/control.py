@@ -42,7 +42,7 @@ def get_height():
             Syma.init_throttle()
             current_height = 0.0
         else:
-            Syma.thrust("mid")
+            Syma.delta_thrust("mid")
             current_height = target
     else:
         count = 0
@@ -71,9 +71,9 @@ def control_logic(val):
     #     # Hover
     #     Syma.thrust("mid")
     if val > target + epsilon:
-        Syma.thrust("down", thrust_gain)
+        Syma.delta_thrust("down", thrust_gain)
     elif val <= target - epsilon:
-        Syma.thrust("up", thrust_gain)
+        Syma.delta_thrust("up", thrust_gain)
 
 
 if __name__ == "__main__":

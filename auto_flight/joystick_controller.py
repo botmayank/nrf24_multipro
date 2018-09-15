@@ -111,10 +111,6 @@ def redraw_screen(screen, roll, pitch, throttle, yaw, pressed=None, drone_comman
 
 
 def parse_joystick_input(joystick):
-    throttle = 0
-    yaw = 0
-    pitch = 0
-    roll = 0
     commands = set()
     pressed = set()
 
@@ -177,6 +173,8 @@ def main_loop(screen=None, kbd=None, joystick=None):
             if screen is not None:
                 redraw_screen(screen, roll, pitch, throttle, yaw, pressed=pressed)
             clock.tick(20)
+
+
     finally:
         curses.endwin()
 

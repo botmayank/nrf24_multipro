@@ -64,43 +64,43 @@ def parse_key_input(char):
     elif char == curses.KEY_RIGHT:
         screen.addstr(0, 0, 'right')
         screen.addstr(1, 0, 'Roll right')
-        Syma.roll("right")
+        Syma.delta_roll("right")
 
     elif char == curses.KEY_LEFT:
         screen.addstr(0, 0, 'left')
         screen.addstr(1, 0, 'Roll left')
-        Syma.roll("left")
+        Syma.delta_roll("left")
 
     elif char == curses.KEY_UP:
         screen.addstr(0, 0, 'up')
         screen.addstr(1, 0, 'Pitch forward')
-        Syma.pitch("forward")
+        Syma.delta_pitch("forward")
 
     elif char == curses.KEY_DOWN:
         screen.addstr(0, 0, 'down')
         screen.addstr(1, 0, 'Pitch back')
-        Syma.pitch("back")
+        Syma.delta_pitch("back")
 
     # Thrust/Yaw
     elif char == ord('w'):
         screen.addstr(0, 0, 'w')
         screen.addstr(1, 0, 'Thrust up')
-        Syma.thrust("up")
+        Syma.delta_thrust("up")
 
     elif char == ord('s'):
         screen.addstr(0, 0, 's')
         screen.addstr(1, 0, 'Thrust down')
-        Syma.thrust("down")
+        Syma.delta_thrust("down")
 
     elif char == ord('a'):
         screen.addstr(0, 0, 'a')
         screen.addstr(1, 0, 'Yaw counter-clockwise')
-        Syma.yaw("ccw")
+        Syma.delta_yaw("ccw")
 
     elif char == ord('d'):
         screen.addstr(0, 0, 'd')
         screen.addstr(1, 0, 'Yaw clockwise')
-        Syma.yaw("cw")
+        Syma.delta_yaw("cw")
 
     # Special Keys
     elif char == ord('r'):  # Default values useful for landing
