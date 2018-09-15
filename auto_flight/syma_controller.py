@@ -7,8 +7,9 @@ Created on Fri Sep 14 2018 23:55:11 2018
 
 @author: botmayank
 """
-import serial
 import time
+
+import serial
 
 INPUT_MIN = 1000
 INPUT_MID = 1500
