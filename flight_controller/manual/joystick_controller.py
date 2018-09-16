@@ -136,8 +136,10 @@ def parse_joystick_input(joystick):
         commands.add('spin_up')
     if 'BTN_SELECT' in pressed:
         commands.add('shut_off')
-    if 'BTN_R1' in pressed or 'BTN_R2' in pressed:
-        commands.add('shut_off')
+    if 'BTN_R1' in pressed:
+        commands.add('force_1')
+    if 'BTN_R2' in pressed:
+        commands.add('force_2')
 
     return roll, pitch, throttle, yaw, commands, pressed
 
@@ -160,7 +162,7 @@ def main_loop(screen=None):
         while 1:
             roll, pitch, throttle, yaw, commands, pressed = parse_joystick_input(joystick)
 
-            max_power = 1.0 if 'force' in commands else 0.5
+            max_power = 1.0 if 'force_2' in commands else 0.75 if 'force_1' in commands else 0.5
 
             if 'shut_off' in commands:
                 cmd = 'shut_off'
