@@ -149,6 +149,10 @@ class SymaController:
         self.throttle = THROTTLE_GO
         self.send_command()
 
+    def level_throttle(self):
+        self.throttle = THROTTLE_GO
+        self.send_command()
+
     def reset_rotation(self):
         self.aileron = INPUT_MID
         self.rudder = INPUT_MID

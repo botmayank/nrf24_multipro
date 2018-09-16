@@ -140,6 +140,8 @@ def parse_joystick_input(joystick):
         commands.add('force_1')
     if 'BTN_R2' in pressed:
         commands.add('force_2')
+    if 'BTN_L2' in pressed:
+        commands.add('level')
 
     return roll, pitch, throttle, yaw, commands, pressed
 
@@ -167,8 +169,9 @@ def main_loop(screen=None):
             if 'shut_off' in commands:
                 cmd = 'shut_off'
                 syma.reset_inputs()
-            elif 'land' in commands:
-                cmd = 'land'
+            elif 'level' in commands:
+                cmd = 'level'
+                syma.level_throttle()
             elif 'spin_up' in commands:
                 cmd = 'spin_up'
                 syma.go_throttle()
