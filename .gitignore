@@ -1,6 +1,7 @@
 # specifics
 
 vision/calibration/output/
+media/*.mp4
 
 *.cppproj
 *.atsln

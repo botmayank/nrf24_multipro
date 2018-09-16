@@ -3,7 +3,6 @@ import time
 import cv2
 import cv2.aruco as aruco
 import numpy as np
-import requests
 
 
 class ArucoFinder:
@@ -24,7 +23,7 @@ class ArucoFinder:
         dist = -1
         if ids is not None and len(ids) > 0:
             rvec, tvec, _ = aruco.estimatePoseSingleMarkers(corners, 0.07, self.camera_matrix, self.dist_matrix)
-            aruco.drawAxis(gray, self.camera_matrix, self.dist_matrix, rvec[0], tvec[0], 0.02)
+            aruco.drawAxis(gray, self.camera_matrix, self.dist_matrix, rvec[0], tvec[0], 0.3)
             aruco.drawDetectedMarkers(gray, corners, ids)
             p1 = corners[0][0][0]
             p2 = corners[0][0][1]
@@ -35,28 +34,24 @@ class ArucoFinder:
 
         if show_window:
             cv2.waitKey(1)
+            cv2.namedWindow('frame', cv2.WINDOW_NORMAL)
+            cv2.resizeWindow('frame', 640, 360)
             cv2.imshow('frame', gray)
 
         return dist
 
     def setup_camera(self, width=640, height=480, frame_rate=30):
-        r = requests.get('http://192.168.31.111:8082/rtsp/start')
-        print(r.status_code)
-        if r.status_code != 200:
-            exit(-1)
-        time.sleep(2)
-        camera = cv2.VideoCapture("rtsp://192.168.31.111:8554/play")
-        camera.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-        camera.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-        camera.set(cv2.CAP_PROP_FPS, frame_rate)
+        camera = cv2.VideoCapture("../../media/syma_aruco_4x4.mp4")
+        print(camera.get(cv2.CAP_PROP_FRAME_WIDTH), camera.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        # camera.set(cv2.CAP_PROP_FRAME_WIDTH, width)
+        # camera.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
+        # camera.set(cv2.CAP_PROP_FPS, frame_rate)
 
         # todo read these values from the camera calibration
-        camera_matrix = np.array([[7.2751531880861648e+02, 0., 3.3573062809603971e+02],
-                                  [0., 7.2902821773214896e+02, 2.2879353141911656e+02],
+        camera_matrix = np.array([[989.43041893, 0., 643.65628421],
+                                  [0., 992.17579024, 342.38060762],
                                   [0., 0., 1.]])
-        dist_matrix = np.array([4.8412257817011632e-02, -1.2834569362402684e-01,
-                                -2.6153996114361634e-03, 5.9434689889416460e-03,
-                                -1.5490960578187754e+00])
+        dist_matrix = np.array([2.13212094e-01, -1.78417926e+00, -2.79719436e-03, -2.82407212e-03, 8.10910900e+00])
 
         return camera, camera_matrix, dist_matrix
 
@@ -69,7 +64,7 @@ if __name__ == '__main__':
     while True:
         start = time.time() * 1000.0
         aruco_finder.run_camera_and_detect(True)
-        # print('time taken: ', (time.time() * 1000.0 - start))
+        print('time taken: ', (time.time() * 1000.0 - start))
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
     del aruco_finder
