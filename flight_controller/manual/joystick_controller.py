@@ -33,7 +33,6 @@ DASHBOARD = """
 inputs : roll:{roll:>3} pitch:{pitch:>3} throttle:{throttle:>3} yaw:{yaw:>3}
 actuals: roll:{actual_roll:>3} pitch:{actual_pitch:>3} throttle:{actual_throttle:>3} yaw:{actual_yaw:>3} 
 pressed: {pressed_keys}
-Command for drone: 0x{hex_command}
 
 Unix time: {unixtime}
 
@@ -87,7 +86,7 @@ def init_screen():
 
 
 def redraw_screen(screen, roll, pitch, throttle, yaw, actual_roll, actual_pitch, actual_throttle, actual_yaw,
-                  pressed=None, drone_command=''):
+                  pressed=None):
     if pressed is None:
         pressed = []
 
@@ -101,7 +100,6 @@ def redraw_screen(screen, roll, pitch, throttle, yaw, actual_roll, actual_pitch,
         'roll_r': int((roll + 1) / 2.0 * 100),
         'roll_l': int((1 - (roll + 1) / 2.0) * 100),
         'unixtime': time.time(),
-        'hex_command': drone_command,
         'pressed_keys': str(pressed),
         'roll': roll,
         'pitch': pitch,
@@ -139,7 +137,7 @@ def parse_joystick_input(joystick):
     if 'BTN_SELECT' in pressed:
         commands.add('shut_off')
     if 'BTN_R1' in pressed or 'BTN_R2' in pressed:
-        commands.add('force')
+        commands.add('shut_off')
 
     return roll, pitch, throttle, yaw, commands, pressed
 
@@ -162,14 +160,16 @@ def main_loop(screen=None):
         while 1:
             roll, pitch, throttle, yaw, commands, pressed = parse_joystick_input(joystick)
 
-            max_power = 0.3 if 'force' in commands else MAX_POWER
+            max_power = 1.0 if 'force' in commands else 0.5
 
             if 'shut_off' in commands:
                 cmd = 'shut_off'
+                syma.reset_inputs()
             elif 'land' in commands:
                 cmd = 'land'
             elif 'spin_up' in commands:
                 cmd = 'spin_up'
+                syma.go_throttle()
             elif 'calibrate' in commands:
                 cmd = 'calibrate'
             else:
@@ -181,10 +181,11 @@ def main_loop(screen=None):
 
             pygame.event.pump()
 
-            syma.roll(roll)
-            syma.pitch(pitch)
-            syma.yaw(yaw)
-            syma.delta_thrust_relative(throttle)
+            if cmd is None:
+                syma.roll(roll)
+                syma.pitch(pitch)
+                syma.yaw(yaw)
+                syma.delta_thrust_relative(throttle)
 
             if screen is not None:
                 redraw_screen(screen, roll, pitch, throttle, yaw, syma.aileron, syma.elevator, syma.throttle,
