@@ -14,4 +14,5 @@ def draw_all_arucos(aruco_dict, dict_length, dir_path, pixel_size=100):
 
 if __name__ == '__main__':
     aruco_dict = aruco.Dictionary_get(aruco.DICT_4X4_50)
-    draw_aruco(aruco_dict, './')
+    # draw_aruco(aruco_dict, './')
+    draw_all_arucos(aruco_dict, 50, './')
