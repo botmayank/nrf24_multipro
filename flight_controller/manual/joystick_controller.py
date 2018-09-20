@@ -190,7 +190,10 @@ def main_loop(screen=None):
                 syma.roll(roll)
                 syma.pitch(pitch)
                 syma.yaw(yaw)
-                syma.delta_thrust_relative(throttle)
+                if throttle == 0:
+                    syma.level_throttle()
+                else:
+                    syma.delta_thrust_relative(throttle)
 
             if screen is not None:
                 redraw_screen(screen, roll, pitch, throttle, yaw, syma.aileron, syma.elevator, syma.throttle,

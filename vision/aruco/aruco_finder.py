@@ -10,6 +10,10 @@ class ArucoFinder:
         self.frame_count = 0
         self.dictionary = aruco.getPredefinedDictionary(aruco.DICT_4X4_50)
         self.camera, self.camera_matrix, self.dist_matrix = self.setup_camera(width, height, frame_rate)
+        self.tracker = cv2.TrackerKCF_create()
+        self.prev_frame = None
+        self.prev_detected = False
+        self.prev_bb = None
 
     def __del__(self):
         self.finalize_camera(self.camera)
@@ -61,12 +65,29 @@ class ArucoFinder:
         '''
 
         dist = -1
-        if ids is None:
+        if ids is None or 17 not in ids:
             self.not_detected += 1
-        elif 17 not in ids:
-            self.not_detected += 1
+            if self.prev_detected:
+                a = self.prev_bb[:, 0].astype(int).tolist()[0]
+                b = self.prev_bb[:, 2].astype(int).tolist()[0]
+                self.tracker = cv2.TrackerKCF_create()
+                print((a[0], a[1], abs(b[0] - a[0]), abs(b[1] - a[1])))
+                ok = self.tracker.init(self.prev_frame, (a[0] - 50, a[1] - 50, 100, 100))
+                print('ok=', ok)
+                self.prev_detected = False
+
+            ok, bbox = self.tracker.update(gray)
+            if ok:
+                print("=--------------ok")
+                p1 = (int(bbox[0]), int(bbox[1]))
+                p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
+                cv2.rectangle(gray, p1, p2, (255, 255, 255), 2, 1)
+            else:
+                print('not ok')
         elif len(ids) > 0:
             rvec, tvec, _ = aruco.estimatePoseSingleMarkers(corners, 0.07, self.camera_matrix, self.dist_matrix)
+            self.prev_bb = corners[0]
+            self.prev_detected = True
             aruco.drawAxis(gray, self.camera_matrix, self.dist_matrix, rvec[0], tvec[0], 0.3)
             aruco.drawDetectedMarkers(gray, corners, ids)
             p1 = corners[0][0][0]
@@ -84,6 +105,7 @@ class ArucoFinder:
                 return 1
             # cv2.imwrite('not_detected-%d.png' % frame_count, gray)
 
+        self.prev_frame = gray
         return dist
 
     def setup_camera(self, width=640, height=480, frame_rate=30):
