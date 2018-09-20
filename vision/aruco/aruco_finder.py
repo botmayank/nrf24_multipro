@@ -2,24 +2,26 @@ import cv2
 import cv2.aruco as aruco
 import numpy as np
 
+from vision.videosource.camerasrc import CameraSrc
+
 
 class ArucoFinder:
 
-    def __init__(self, width=640, height=480, frame_rate=30):
+    def __init__(self):
         self.not_detected = 0
         self.frame_count = 0
         self.dictionary = aruco.getPredefinedDictionary(aruco.DICT_4X4_50)
-        self.camera, self.camera_matrix, self.dist_matrix = self.setup_camera(width, height, frame_rate)
+        self.camerasrc = CameraSrc()
         self.tracker = cv2.TrackerKCF_create()
         self.prev_frame = None
         self.prev_detected = False
         self.prev_bb = None
 
     def __del__(self):
-        self.finalize_camera(self.camera)
+        del self.camerasrc
 
     def run_camera_and_detect(self, show_window=False):
-        ret, frame = self.camera.read()
+        frame = self.camerasrc.grab_frame()
         self.frame_count += 1
         if frame is None:
             return -2
@@ -43,9 +45,9 @@ class ArucoFinder:
         # detector_params.polygonalApproxAccuracyRate = 0.08
 
         # need to understand minOtsuStdDev
-        detector_params.minOtsuStdDev = 10
+        # detector_params.minOtsuStdDev = 10
 
-        detector_params.perspectiveRemoveIgnoredMarginPerCell = 0.4
+        # detector_params.perspectiveRemoveIgnoredMarginPerCell = 0.4
 
         # kinda increases by 4-5% but only when I set it very high
         # detector_params.errorCorrectionRate = 1
@@ -53,7 +55,7 @@ class ArucoFinder:
         # detector_params.maxErroneousBitsInBorderRate = 1
 
         corners, ids, rejected_corners = aruco.detectMarkers(gray, self.dictionary, parameters=detector_params,
-                                                             cameraMatrix=self.camera_matrix)
+                                                             cameraMatrix=self.camerasrc.camera_matrix)
 
         # show rejected corners
         '''
@@ -78,17 +80,16 @@ class ArucoFinder:
 
             ok, bbox = self.tracker.update(gray)
             if ok:
-                print("=--------------ok")
                 p1 = (int(bbox[0]), int(bbox[1]))
                 p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
                 cv2.rectangle(gray, p1, p2, (255, 255, 255), 2, 1)
-            else:
-                print('not ok')
+
         elif len(ids) > 0:
-            rvec, tvec, _ = aruco.estimatePoseSingleMarkers(corners, 0.07, self.camera_matrix, self.dist_matrix)
+            rvec, tvec, _ = aruco.estimatePoseSingleMarkers(corners, 0.07, self.camerasrc.camera_matrix,
+                                                            self.camerasrc.dist_matrix)
             self.prev_bb = corners[0]
             self.prev_detected = True
-            aruco.drawAxis(gray, self.camera_matrix, self.dist_matrix, rvec[0], tvec[0], 0.3)
+            aruco.drawAxis(gray, self.camerasrc.camera_matrix, self.camerasrc.dist_matrix, rvec[0], tvec[0], 0.3)
             aruco.drawDetectedMarkers(gray, corners, ids)
             p1 = corners[0][0][0]
             p2 = corners[0][0][1]
@@ -107,24 +108,6 @@ class ArucoFinder:
 
         self.prev_frame = gray
         return dist
-
-    def setup_camera(self, width=640, height=480, frame_rate=30):
-        camera = cv2.VideoCapture("../../media/syma_aruco_4x4_17_short_2.mp4")
-        print(camera.get(cv2.CAP_PROP_FRAME_WIDTH), camera.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        # camera.set(cv2.CAP_PROP_FRAME_WIDTH, width)
-        # camera.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
-        # camera.set(cv2.CAP_PROP_FPS, frame_rate)
-
-        # todo read these values from the camera calibration
-        camera_matrix = np.array([[989.43041893, 0., 643.65628421],
-                                  [0., 992.17579024, 342.38060762],
-                                  [0., 0., 1.]])
-        dist_matrix = np.array([2.13212094e-01, -1.78417926e+00, -2.79719436e-03, -2.82407212e-03, 8.10910900e+00])
-
-        return camera, camera_matrix, dist_matrix
-
-    def finalize_camera(self, camera):
-        camera.release()
 
 
 if __name__ == '__main__':
