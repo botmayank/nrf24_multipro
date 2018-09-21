@@ -15,7 +15,7 @@ class ArucoFinder:
         self.tracker = cv2.TrackerKCF_create()
         self.prev_frame = None
         self.prev_detected = False
-        self.prev_bb = None
+        self.prev_box = None
 
     def __del__(self):
         del self.camerasrc
@@ -56,7 +56,7 @@ class ArucoFinder:
 
         corners, ids, rejected_corners = aruco.detectMarkers(gray, self.dictionary, parameters=detector_params,
                                                              cameraMatrix=self.camerasrc.camera_matrix)
-
+        # print(corners)
         # show rejected corners
         '''
         print('rejected: ', len(rejected_corners))
@@ -66,16 +66,17 @@ class ArucoFinder:
                           (255, 255, 255), thickness=4)
         '''
 
-        dist = -1
         if ids is None or 17 not in ids:
             self.not_detected += 1
             if self.prev_detected:
-                a = self.prev_bb[:, 0].astype(int).tolist()[0]
-                b = self.prev_bb[:, 2].astype(int).tolist()[0]
+                print(self.prev_box)
+                x, y = np.min(self.prev_box[:, 0]), np.min(self.prev_box[:, 1])
+                w, h = np.max(self.prev_box[:, 0]) - np.min(self.prev_box[:, 0]), \
+                       np.max(self.prev_box[:, 1]) - np.min(self.prev_box[:, 1])
                 self.tracker = cv2.TrackerKCF_create()
-                print((a[0], a[1], abs(b[0] - a[0]), abs(b[1] - a[1])))
-                ok = self.tracker.init(self.prev_frame, (a[0] - 50, a[1] - 50, 100, 100))
-                print('ok=', ok)
+                padding = 20
+                ok = self.tracker.init(self.prev_frame, (x - padding / 2, y - padding / 2, w + padding, h + padding))
+                # print('ok=', ok)
                 self.prev_detected = False
 
             ok, bbox = self.tracker.update(gray)
@@ -85,17 +86,14 @@ class ArucoFinder:
                 cv2.rectangle(gray, p1, p2, (255, 255, 255), 2, 1)
 
         elif len(ids) > 0:
-            rvec, tvec, _ = aruco.estimatePoseSingleMarkers(corners, 0.07, self.camerasrc.camera_matrix,
+            # get the first array element with id == 17
+            marker_index = np.array(np.where(np.squeeze(ids) == 17))[0, 0]
+            rvec, tvec, _ = aruco.estimatePoseSingleMarkers(corners, 0.08, self.camerasrc.camera_matrix,
                                                             self.camerasrc.dist_matrix)
-            self.prev_bb = corners[0]
-            self.prev_detected = True
             aruco.drawAxis(gray, self.camerasrc.camera_matrix, self.camerasrc.dist_matrix, rvec[0], tvec[0], 0.3)
             aruco.drawDetectedMarkers(gray, corners, ids)
-            p1 = corners[0][0][0]
-            p2 = corners[0][0][1]
-            dist = np.linalg.norm(p1 - p2)
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            cv2.putText(gray, "Length: %f" % dist, (0, 50), font, 0.5, (255, 255, 255), 3, cv2.LINE_AA)
+            self.prev_box = np.squeeze(corners[marker_index])
+            self.prev_detected = True
 
         if show_window:  # and ids is None:
             cv2.waitKey(1)
@@ -107,7 +105,7 @@ class ArucoFinder:
             # cv2.imwrite('not_detected-%d.png' % frame_count, gray)
 
         self.prev_frame = gray
-        return dist
+        return 10
 
 
 if __name__ == '__main__':
