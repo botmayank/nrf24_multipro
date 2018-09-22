@@ -14,8 +14,9 @@ class CameraSrc:
             # wait for the rtsp stream to initialize
             self.camera = cv2.VideoCapture("rtsp://%s:%d/%s" % ("192.168.31.111", 8554, "play"))
         else:
-            self.camera = cv2.VideoCapture("../../media/syma_aruco_4x4_17_short_2.mp4")
+            # self.camera = cv2.VideoCapture("../../media/syma_aruco_4x4_17_short_2.mp4")
             # self.camera = cv2.VideoCapture("../../media/single_marker.mp4")
+            self.camera = cv2.VideoCapture("../../media/single_height.mp4")
 
         self.camera_matrix = np.array([[989.43041893, 0., 643.65628421],
                                        [0., 992.17579024, 342.38060762],
