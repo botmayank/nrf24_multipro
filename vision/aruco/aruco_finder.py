@@ -31,10 +31,11 @@ class ArucoFinder:
         pose = None
         self.frame_count += 1
         if frame is None:
+            print("Error! No more frames")
             return None
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         b = 0
-        c = 250
+        c = 500
         gray = cv2.addWeighted(gray, 1. + c / 127., gray, 0, b - c)
         gray = cv2.bilateralFilter(gray, 9, 75, 75)
 
@@ -43,7 +44,7 @@ class ArucoFinder:
         # detector_params.adaptiveThreshWinSizeStep = 3
 
         # adaptiveThreshWinSizeMax: increasing size of adaptiveThreshWinSizeMax to 103 added 5-8% increase in detection
-        # detector_params.adaptiveThreshWinSizeMax = 103
+        detector_params.adaptiveThreshWinSizeMax = 103
 
         # adaptiveThreshConstant has almost no effect
         # detector_params.adaptiveThreshConstant = 4
@@ -54,12 +55,12 @@ class ArucoFinder:
         # need to understand minOtsuStdDev
         # detector_params.minOtsuStdDev = 10
 
-        # detector_params.perspectiveRemoveIgnoredMarginPerCell = 0.4
+        detector_params.perspectiveRemoveIgnoredMarginPerCell = 0.4
 
         # kinda increases by 4-5% but only when I set it very high
         # detector_params.errorCorrectionRate = 1
 
-        # detector_params.maxErroneousBitsInBorderRate = 1
+        detector_params.maxErroneousBitsInBorderRate = 0.5
 
         corners, ids, rejected_corners = aruco.detectMarkers(gray, self.dictionary, parameters=detector_params,
                                                              cameraMatrix=self.camerasrc.camera_matrix)

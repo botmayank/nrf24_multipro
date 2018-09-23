@@ -1,6 +1,3 @@
-import time
-
-from flight_controller.syma_controller import SymaController
 from vision.aruco.aruco_finder import ArucoFinder
 from vision.aruco.pose import Pose
 
@@ -48,12 +45,6 @@ def control():
 
 if __name__ == '__main__':
     try:
-        syma = SymaController(PORT)
-        time.sleep(2)
-
-        syma.go_throttle()
-        time.sleep(1)
-
         aruco_finder = ArucoFinder()
 
         control()
