@@ -162,6 +162,9 @@ class SymaController:
         self.arduino.write(str.encode(command + "\n"))
         return command
 
+    def values(self):
+        return 'T: %f R:%f P:%f Y:%f' % (self.throttle, self.aileron, self.elevator, self.rudder)
+
     def init_throttle(self):
         self.max_throttle()
         cmd = self.send_command()
