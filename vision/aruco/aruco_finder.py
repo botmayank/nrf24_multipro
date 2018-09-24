@@ -21,6 +21,7 @@ class ArucoFinder:
         self.prev_frame = None
         self.prev_detected = False
         self.prev_box = None
+        self.prev_pose = None
         np.set_printoptions(precision=2)
 
     def __del__(self):
@@ -34,10 +35,10 @@ class ArucoFinder:
             print("Error! No more frames")
             return None
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        b = 0
-        c = 500
-        gray = cv2.addWeighted(gray, 1. + c / 127., gray, 0, b - c)
-        gray = cv2.bilateralFilter(gray, 9, 75, 75)
+        # b = 0
+        # c = 500
+        # gray = cv2.addWeighted(gray, 1. + c / 127., gray, 0, b - c)
+        # gray = cv2.bilateralFilter(gray, 9, 75, 75)
 
         detector_params = aruco.DetectorParameters_create()
         # adaptiveThreshWinSizeStep : changing this has almost no effect
@@ -81,7 +82,7 @@ class ArucoFinder:
                 w, h = np.max(self.prev_box[:, 0]) - np.min(self.prev_box[:, 0]), \
                        np.max(self.prev_box[:, 1]) - np.min(self.prev_box[:, 1])
                 self.tracker = cv2.TrackerKCF_create()
-                padding = 20
+                padding = 40
                 self.tracker.init(self.prev_frame, (yaw - padding / 2, y - padding / 2, w + padding, h + padding))
                 self.prev_detected = False
 
@@ -89,7 +90,7 @@ class ArucoFinder:
             if ok:
                 p1 = (int(bbox[0]), int(bbox[1]))
                 p2 = (int(bbox[0] + bbox[2]), int(bbox[1] + bbox[3]))
-                pose = Pose(bbox[0] - 643, bbox[1] - 342, max(bbox[2], bbox[3]))
+                pose = Pose(bbox[0] - 643, bbox[1] - 342, max(bbox[2], bbox[3]), yaw=self.prev_pose.yaw)
                 cv2.rectangle(gray, p1, p2, (255, 255, 255), 2, 1)
 
         # else detect since there's at least of one marker our interest
@@ -139,6 +140,7 @@ class ArucoFinder:
                 return None
 
         self.prev_frame = gray
+        self.prev_pose = pose
         return pose
 
     def text(self, frame, text, id):
@@ -149,9 +151,6 @@ class ArucoFinder:
 if __name__ == '__main__':
     aruco_finder = ArucoFinder()
     while True:
-        if aruco_finder.run_camera_and_detect(True) is None:
-            break
-        if cv2.waitKey(1) & 0xFF == ord('h'):
-            break
+        aruco_finder.run_camera_and_detect(True)
     print('detections rate:', (1 - aruco_finder.not_detected / aruco_finder.frame_count) * 100.0)
     del aruco_finder
